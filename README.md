@@ -1,5 +1,5 @@
-# Hospital Finder - Project Setup Guide 🏥
-This guide explains how to quickly spin up the Hospital Finder application on a brand new device for your presentation or collaboration.
+# VitaLink - Project Setup Guide 🏥
+This guide explains how to quickly spin up the VitaLink application on a brand new device for your presentation or collaboration.
 
 Because your database is now securely hosted in the cloud via **Supabase**, setting up on a new device is much easier than before! You no longer need to install local PostgreSQL software.
 

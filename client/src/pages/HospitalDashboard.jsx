@@ -39,6 +39,8 @@ export default function HospitalDashboard() {
   const [activeTab, setActiveTab] = useState('profile');
   const [appointments, setAppointments] = useState([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [selectedApt, setSelectedApt] = useState(null);
+  const [aptView, setAptView] = useState('upcoming');
 
   // Schedule state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -329,6 +331,19 @@ export default function HospitalDashboard() {
     return url.startsWith('http') ? url : `${API_BASE}${url}`;
   };
 
+  const isPast = (dateStr, timeStr) => {
+    try {
+      const d = new Date(`${dateStr.split('T')[0]}T${timeStr}`);
+      return d < new Date();
+    } catch {
+      return false;
+    }
+  };
+
+  const upcomingApts = appointments.filter(apt => !isPast(apt.appointmentDate, apt.appointmentTime));
+  const pastApts = appointments.filter(apt => isPast(apt.appointmentDate, apt.appointmentTime));
+  const displayApts = aptView === 'upcoming' ? upcomingApts : pastApts;
+
   if (loading) return <div className="page-container"><div className="loading-spinner"><div className="spinner"></div></div></div>;
 
   return (
@@ -499,17 +514,32 @@ export default function HospitalDashboard() {
       {/* Appointments Tab */}
       {hospital && !isEditing && activeTab === 'appointments' && (
         <div className="card">
-          <div className="section-header">
+          <div className="section-header" style={{ marginBottom: '1rem' }}>
             <h3 className="section-title">Patient Appointments</h3>
             <button className="btn btn-secondary btn-sm" onClick={fetchAppointments} disabled={loadingAppointments}>
               Refresh
             </button>
           </div>
 
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+            <button 
+              className={`btn ${aptView === 'upcoming' ? 'btn-primary' : 'btn-outline'} btn-sm`}
+              onClick={() => setAptView('upcoming')}
+            >
+              Upcoming ({upcomingApts.length})
+            </button>
+            <button 
+              className={`btn ${aptView === 'past' ? 'btn-primary' : 'btn-outline'} btn-sm`}
+              onClick={() => setAptView('past')}
+            >
+              Past ({pastApts.length})
+            </button>
+          </div>
+
           {loadingAppointments ? (
             <div style={{ textAlign: 'center', padding: '2rem' }}><div className="spinner"></div></div>
-          ) : appointments.length === 0 ? (
-            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>No appointments yet.</p>
+          ) : displayApts.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>No {aptView} appointments.</p>
           ) : (
             <div className="table-responsive">
               <table className="table" style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
@@ -517,12 +547,11 @@ export default function HospitalDashboard() {
                   <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <th style={{ padding: '1rem 0' }}>Patient</th>
                     <th>Date & Time</th>
-                    <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {appointments.map(apt => (
+                  {displayApts.map(apt => (
                     <tr key={apt.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '1rem 0' }}>
                         <div style={{ fontWeight: 500 }}><FiUser /> {apt.patientName || apt.accountHolderName}</div>
@@ -536,23 +565,17 @@ export default function HospitalDashboard() {
                       <td>
                         <div><FiCalendar /> {new Date(apt.appointmentDate).toLocaleDateString()}</div>
                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}><FiClock /> {apt.appointmentTime}</div>
+                        <div style={{ marginTop: '0.4rem' }}>
+                          <span className={`badge ${apt.status === 'CONFIRMED' ? 'badge-success' : apt.status === 'CANCELLED' ? 'badge-danger' : 'badge-warning'}`}>
+                            {apt.status}
+                          </span>
+                        </div>
                       </td>
                       <td>
-                        <select 
-                          className="form-control" 
-                          style={{ padding: '0.25rem', width: 'auto', fontSize: '0.85rem' }}
-                          value={apt.status}
-                          onChange={(e) => handleUpdateStatus(apt.id, e.target.value)}
-                        >
-                          <option value="PENDING">Pending</option>
-                          <option value="CONFIRMED">Confirmed</option>
-                          <option value="COMPLETED">Completed</option>
-                          <option value="CANCELLED">Cancelled</option>
-                        </select>
-                      </td>
-                      <td>
-                         <button className="btn btn-sm btn-success" onClick={() => handleUpdateStatus(apt.id, 'CONFIRMED')} disabled={apt.status === 'CONFIRMED'} style={{ marginRight: 4 }}>Confirm</button>
-                         <button className="btn btn-sm btn-danger" onClick={() => handleUpdateStatus(apt.id, 'CANCELLED')} disabled={apt.status === 'CANCELLED'}>Cancel</button>
+                         <button className="btn btn-sm btn-primary" onClick={() => setSelectedApt(apt)} style={{ marginRight: 4 }}>View Details</button>
+                         {aptView === 'upcoming' && (
+                           <button className="btn btn-sm btn-success" onClick={() => handleUpdateStatus(apt.id, 'CONFIRMED')} disabled={apt.status === 'CONFIRMED' || apt.status === 'CANCELLED'} style={{ marginRight: 4 }}>Confirm</button>
+                         )}
                       </td>
                     </tr>
                   ))}
@@ -771,6 +794,49 @@ export default function HospitalDashboard() {
               <FiSave /> {uploading ? 'Uploading Image...' : saving ? 'Saving...' : (hospital ? 'Update Hospital' : 'Register Hospital')}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Patient Details Modal */}
+      {selectedApt && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card fade-in" style={{ width: '100%', maxWidth: '500px', margin: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FiUser /> Patient Details</h3>
+              <button className="btn btn-outline btn-icon" onClick={() => setSelectedApt(null)}><FiX /></button>
+            </div>
+            
+            <div className="row g-3">
+              <div className="col-12 col-md-6">
+                <span className="detail-info-label">Full Name</span>
+                <div className="detail-info-value">{selectedApt.patientName || selectedApt.accountHolderName}</div>
+              </div>
+              <div className="col-12 col-md-6">
+                <span className="detail-info-label">Contact Number</span>
+                <div className="detail-info-value">{selectedApt.contactNumber || 'N/A'}</div>
+              </div>
+              <div className="col-12 col-md-6">
+                <span className="detail-info-label">Age</span>
+                <div className="detail-info-value">{selectedApt.age || 'N/A'}</div>
+              </div>
+              <div className="col-12 col-md-6">
+                <span className="detail-info-label">Gender</span>
+                <div className="detail-info-value">{selectedApt.gender || 'N/A'}</div>
+              </div>
+              <div className="col-12">
+                <span className="detail-info-label">Address</span>
+                <div className="detail-info-value">{selectedApt.address || 'N/A'}</div>
+              </div>
+              <div className="col-12">
+                <span className="detail-info-label">Appointment Time</span>
+                <div className="detail-info-value">{new Date(selectedApt.appointmentDate).toLocaleDateString()} at {selectedApt.appointmentTime}</div>
+              </div>
+            </div>
+            
+            <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+              <button className="btn btn-primary" onClick={() => setSelectedApt(null)}>Close Window</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

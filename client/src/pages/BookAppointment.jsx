@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { hospitalAPI, appointmentAPI } from '../api';
+import { hospitalAPI, appointmentAPI, userAPI } from '../api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { FiCalendar, FiClock, FiMapPin, FiArrowLeft, FiUser } from 'react-icons/fi';
@@ -64,12 +64,25 @@ export default function BookAppointment() {
     }
   };
 
-  const autoFillDetails = () => {
+  const autoFillDetails = async () => {
     if (user) {
-      setPatientName(user.name);
-      setContactNumber(user.phone || '');
-      setAddress(user.address || '');
-      toast.success('Auto-filled with your profile details.');
+      try {
+        const res = await userAPI.getProfile();
+        const profile = res.data;
+        
+        setPatientName(user.name);
+        if (profile) {
+          setContactNumber(profile.phone || '');
+          setAddress(profile.address || '');
+          setAge(profile.age || '');
+          setGender(profile.gender || 'Male');
+        }
+        toast.success('Auto-filled with your profile details.');
+      } catch (err) {
+        console.error('Failed to fetch profile for autofill', err);
+        setPatientName(user.name);
+        toast.error('Could not fetch full profile, autofilled name only.');
+      }
     }
   };
 

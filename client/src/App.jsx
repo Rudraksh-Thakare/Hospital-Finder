@@ -10,6 +10,9 @@ import BookAppointment from './pages/BookAppointment';
 import HospitalDashboard from './pages/HospitalDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PatientDashboard from './pages/PatientDashboard';
+import MedicalRecords from './pages/MedicalRecords';
+import PatientProfile from './pages/PatientProfile';
+import SharedProfile from './pages/SharedProfile';
 import './index.css';
 
 function ProtectedRoute({ children, roles }) {
@@ -48,6 +51,17 @@ function AppRoutes() {
           <PatientDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/my-records" element={
+        <ProtectedRoute roles={['PATIENT']}>
+          <MedicalRecords />
+        </ProtectedRoute>
+      } />
+      <Route path="/my-profile" element={
+        <ProtectedRoute roles={['PATIENT']}>
+          <PatientProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/shared/:token" element={<SharedProfile />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

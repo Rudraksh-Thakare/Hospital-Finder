@@ -95,7 +95,7 @@ export default function HospitalDetail() {
               </div>
               <div className="col-12 col-md-6 detail-info-item">
                 <span className="detail-info-label">Emergency</span>
-                <span className="detail-info-value">{hospital.emergency ? '✅ Available' : '❌ Not Available'}</span>
+                <span className="detail-info-value">{hospital.emergency ? 'Available' : 'Not Available'}</span>
               </div>
               {hospital.phone && (
                 <div className="col-12 col-md-6 detail-info-item">
@@ -112,8 +112,8 @@ export default function HospitalDetail() {
               {hospital.website && (
                 <div className="col-12 col-md-6 detail-info-item">
                   <span className="detail-info-label">Website</span>
-                  <span className="detail-info-value">
-                    <a href={hospital.website} target="_blank" rel="noreferrer" style={{ color: 'var(--primary-light)', textDecoration: 'none' }}>
+                  <span className="detail-info-value" style={{ wordBreak: 'break-all' }}>
+                    <a href={hospital.website} target="_blank" rel="noreferrer" style={{ color: 'var(--primary-light)', textDecoration: 'none', display: 'inline-block' }}>
                       <FiGlobe style={{ marginRight: 4 }} />{hospital.website}
                     </a>
                   </span>

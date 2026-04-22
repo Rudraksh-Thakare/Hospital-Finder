@@ -18,7 +18,7 @@ export default function Navbar() {
     <nav className="navbar">
       <Link to="/" className="navbar-brand">
         <div className="brand-icon"><FaHospitalAlt /></div>
-        HospitalFinder
+        VitaLink
       </Link>
 
       <div className="navbar-links">
@@ -27,7 +27,13 @@ export default function Navbar() {
 
         {isAuthenticated ? (
           <>
-            {user?.role === 'PATIENT' && <Link to="/my-appointments" className="nav-link">My Appointments</Link>}
+            {user?.role === 'PATIENT' && (
+              <>
+                <Link to="/my-appointments" className="nav-link">My Appointments</Link>
+                <Link to="/my-records" className="nav-link">Medical Records</Link>
+                <Link to="/my-profile" className="nav-link">My Profile</Link>
+              </>
+            )}
             {isAdmin && <Link to="/admin" className="nav-link">Admin Panel</Link>}
             {isHospital && <Link to="/hospital/dashboard" className="nav-link">My Hospital</Link>}
 

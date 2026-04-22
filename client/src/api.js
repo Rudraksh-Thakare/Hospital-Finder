@@ -70,6 +70,15 @@ export const adminAPI = {
 // User
 export const userAPI = {
   getMe: () => api.get('/users/me'),
+  getProfile: () => api.get('/users/profile'),
+  updateProfile: (data) => api.put('/users/profile', data),
+  uploadDocument: (data) => api.post('/users/documents', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  getDocuments: () => api.get('/users/documents'),
+  deleteDocument: (id) => api.delete(`/users/documents/${id}`),
+  generateShareToken: () => api.post('/users/share'),
+  getSharedProfile: (token) => api.get(`/users/shared/${token}`),
 };
 
 // Appointments
