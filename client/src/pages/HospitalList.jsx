@@ -39,19 +39,36 @@ export default function HospitalList() {
       if (search) params.search = search;
       if (specialty) params.specialty = specialty;
       if (emergencyOnly) params.emergency = 'true';
-      if (userLocation) {
-        params.lat = userLocation.lat;
-        params.lng = userLocation.lng;
-        params.radius = 100;
-      }
       const res = await hospitalAPI.getAll(params);
-      setHospitals(res.data);
+      let data = res.data;
+
+      // If user shared location, calculate distance for display & sort nearest-first
+      if (userLocation) {
+        data = data.map(h => {
+          const distance = haversineDistance(userLocation.lat, userLocation.lng, h.latitude, h.longitude);
+          return { ...h, distance: Math.round(distance * 10) / 10 };
+        }).sort((a, b) => a.distance - b.distance);
+      }
+
+      setHospitals(data);
     } catch (err) {
       console.error('Failed to fetch hospitals:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Haversine formula to calculate distance between two coordinates (in km)
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
 
   return (
     <div className="page-container fade-in">
@@ -118,9 +135,9 @@ export default function HospitalList() {
       ) : (
         <div className="row g-4">
           {hospitals.map((h) => (
-            <div className="col-12 col-md-6 col-lg-4" key={h.id}>
-              <Link to={`/hospitals/${h.id}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-                <div className="hospital-card h-100">
+            <div className="col-12 col-md-6 col-lg-4" key={h.id} style={{ display: 'flex' }}>
+              <Link to={`/hospitals/${h.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <div className="hospital-card" style={{ flex: 1 }}>
                   <div className="hospital-card-img" style={{ padding: h.imageUrl ? '0' : 'auto' }}>
                     {h.imageUrl ? (
                       <img src={getImageSrc(h.imageUrl)} alt={h.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
